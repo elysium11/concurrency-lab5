@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>2</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///root/hdfs/datanode</value>
+        <description>Comma separated list of paths on the local filesystem of a DataNode where it should store its blocks.</description>
+    </property>
+
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///root/hdfs/namenode</value>
+        <description>Path on the local filesystem where the NameNode stores the namespace and transaction logs persistently.</description>
+    </property>
+</configuration>

@@ -1,0 +1,1 @@
+docker build -t elysium11/concurrency-lab5 .
