@@ -101,6 +101,7 @@ public class Application implements Serializable {
         .filter(r -> r.getResponseStatus() >= 500 && r.getResponseStatus() < 600)
         .groupBy(r -> r.getHost() + r.getEndpoint())
         .mapValues(i -> i.spliterator().getExactSizeIfKnown())
+        .coalesce(1)
         .saveAsTextFile("hdfs://" + hdfsHost + ":9000/task1");
 
     // 2. Time series
@@ -131,6 +132,7 @@ public class Application implements Serializable {
             SIMPLE_FORMATTER.format(r.getTimestamp(0)),
             SIMPLE_FORMATTER.format(r.getTimestamp(1)),
             r.getLong(2)))
+        .coalesce(1)
         .saveAsTextFile("hdfs://" + hdfsHost + ":9000/task3");
   }
 
