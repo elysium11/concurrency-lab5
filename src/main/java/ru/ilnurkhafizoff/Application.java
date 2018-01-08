@@ -109,6 +109,7 @@ public class Application implements Serializable {
         .groupBy(r -> r.getDate().toLocalDate().format(DateTimeFormatter.ISO_DATE))
         .mapValues(this::countHttpMethodAndStatusPairs)
         .mapValues(m -> removeWhereCountLessThan(m, 10))
+        .sortByKey(true, 1)
         .saveAsTextFile("hdfs://" + hdfsHost + ":9000/task2");
 
     // 3. 4xx and 5xx with week window
