@@ -37,7 +37,7 @@ hdfs dfs -getmerge /task3 task3.txt
 spark-submit --total-executor-cores 8 \
              --class ru.ilnurkhafizoff.Application \
              --master spark://hadoop-master:7077 \
-             concurrency-lab5-1.0.jar $HOSTNAME /nasa_logs
+             concurrency-lab5-1.0.jar hadoop-master /nasa_logs
 ```
 * После выполнения, результаты можно получить выполнив следующие команды: 
 ```shell
