@@ -42,7 +42,6 @@ RUN mv /tmp/ssh_config ~/.ssh/config && \
     mv /tmp/hadoop-env.sh $HADOOP_CONF_DIR/ && \
     mv /tmp/hdfs-site.xml $HADOOP_CONF_DIR/ && \
     mv /tmp/core-site.xml $HADOOP_CONF_DIR/ && \
-    mv /tmp/mapred-site.xml $HADOOP_CONF_DIR/ && \
     mv /tmp/yarn-site.xml $HADOOP_CONF_DIR/ && \
     cp /tmp/slaves $HADOOP_CONF_DIR/ && \
     mv /tmp/slaves $SPARK_HOME/conf/ && \
