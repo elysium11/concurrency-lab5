@@ -11,10 +11,8 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Comparator;
 import java.util.Objects;
-
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -23,7 +21,6 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import scala.Tuple2;
 import scala.Tuple3;
 
 public class Application implements Serializable {
@@ -107,10 +104,11 @@ public class Application implements Serializable {
     // 2. Time series
 
     records
-        .groupBy(r -> r.getDate().toLocalDate().format(DateTimeFormatter.ISO_DATE))
-        .mapValues(this::countHttpMethodAndStatusPairs)
-        .mapValues(m -> removeWhereCountLessThan(m, 10))
-        .sortByKey(true, 1)
+        .groupBy(r -> new Tuple3<>(r.getDate().toLocalDate().format(DateTimeFormatter.ISO_DATE), r.getMethod(), r.getResponseStatus()))
+        .mapValues(i -> i.spliterator().getExactSizeIfKnown())
+        .filter(t -> t._2 >= 10)
+        .sortByKey(SerializableComparator.serialize((t1, t2) -> t1._1().compareTo(t2._1())))
+        .coalesce(1)
         .saveAsTextFile("hdfs://" + hdfsHost + ":9000/task2");
 
     // 3. 4xx and 5xx with week window
@@ -124,9 +122,10 @@ public class Application implements Serializable {
     recordsDataSet
         .filter("responseStatus >= 400")
         .filter("responseStatus < 600")
-        .groupBy(window(recordsDataSet.col("date"), "1 week"))
+        .groupBy(window(recordsDataSet.col("date"), "1 week", "1 day"))
         .agg(count("responseStatus").as("status_count"))
         .select("window.start", "window.end", "status_count")
+        .orderBy("start")
         .javaRDD()
         .map(r -> new Tuple3<>(
             SIMPLE_FORMATTER.format(r.getTimestamp(0)),
@@ -136,23 +135,10 @@ public class Application implements Serializable {
         .saveAsTextFile("hdfs://" + hdfsHost + ":9000/task3");
   }
 
+  private interface SerializableComparator<T> extends Comparator<T>, Serializable {
 
-  private Map<Tuple2<String, Integer>, Long> countHttpMethodAndStatusPairs(Iterable<Record> records) {
-
-    Map<Tuple2<String, Integer>, Long> result = new HashMap<>();
-
-    for (Record r : records) {
-      Tuple2<String, Integer> methodAndStatus = new Tuple2<>(r.getMethod(), r.getResponseStatus());
-      result.putIfAbsent(methodAndStatus, 0L);
-      result.compute(methodAndStatus, (t, c) -> c + 1);
+    static <T> SerializableComparator<T> serialize(SerializableComparator<T> comparator) {
+      return comparator;
     }
-
-    return result;
-  }
-
-  private <K, V extends Long> Map<K, V> removeWhereCountLessThan(Map<K, V> map, long count) {
-    HashMap<K, V> copyMap = new HashMap<>(map);
-    copyMap.entrySet().removeIf(e -> e.getValue().longValue() < count);
-    return copyMap;
   }
 }
